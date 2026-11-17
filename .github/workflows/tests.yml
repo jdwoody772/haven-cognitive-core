@@ -13,4 +13,13 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -v
       - name: Compile source
-        run: python -m py_compile haven.py server.py
+        run: python -m py_compile haven.py server.py autonomy.py integrated.py graph_policy.py benchmark.py
+      - name: Compare learned graph policy against baseline
+        run: python benchmark.py | tee benchmark-results.json
+      - name: Upload benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: haven-benchmark
+          path: benchmark-results.json
+          if-no-files-found: ignore
