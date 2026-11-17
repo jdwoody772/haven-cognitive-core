@@ -5,6 +5,7 @@ still uses tabular Q-learning; this bridge does not pretend graph predictions
 already control decisions.
 """
 from haven import Haven
+from graph_policy import GraphPolicy
 from autonomy import AutonomousLearner, EnergyWorld
 import random
 
@@ -14,6 +15,7 @@ class IntegratedHaven:
                  seed=13, epsilon=0.15):
         self.graph = Haven(graph_path)
         self.agent = AutonomousLearner(agent_path, seed=seed, epsilon=epsilon)
+        self.policy = GraphPolicy(self.graph)
         self.world = EnergyWorld(random.Random(seed + 1))
         self.state = self.world.reset()
         self.episodes = 0
@@ -29,7 +31,7 @@ class IntegratedHaven:
 
     def act(self, explore=True):
         state = self.state
-        action = self.agent.choose(state, explore=explore)
+        action = self.policy.choose(state, self.agent, explore=explore)
         next_state, reward, done = self.world.step(action)
         self.agent.learn(state, action, reward, next_state, done)
         # Two graph observations: state -> chosen action, and action -> outcome.
@@ -39,11 +41,13 @@ class IntegratedHaven:
         outcome = self.symbol(next_state)
         self.graph.teach(source, decision)
         self.graph.teach(decision, outcome)
+        self.policy.observe(state, action, reward)
         if reward > 0:
             self.collections += 1
         event = {"state": state, "action": action, "next_state": next_state,
                  "reward": reward, "done": done,
-                 "graph_prediction": self.graph.predict(decision)[0]}
+                 "graph_prediction": self.graph.predict(decision)[0],
+                 "graph_policy_scores": self.policy.scores(state)}
         if done:
             self.episodes += 1
             self.state = self.world.reset()
