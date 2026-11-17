@@ -24,7 +24,7 @@ class IntegratedTests(unittest.TestCase):
             h.run(12)
             restored = IntegratedHaven(graph, agent)
             self.assertEqual(restored.agent.total_steps, 12)
-            self.assertEqual(restored.graph.steps, 24)
+            self.assertEqual(restored.graph.steps, 36)  # Three graph observations per action
 
     def test_outcome_graph_contains_actual_observation(self):
         with tempfile.TemporaryDirectory() as d:
